@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.23.4'
+
+      - name: Build binaries
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o DiscordChatter-Linux
+          GOOS=darwin GOARCH=amd64 go build -o DiscordChatter-macOS
+          GOOS=windows GOARCH=amd64 go build -o DiscordChatter-Windows.exe
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body_path: ./RELEASE_BODY.md
+          draft: false
+          prerelease: false
+
+      - name: Upload Linux binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: DiscordChatter-Linux
+          asset_name: DiscordChatter-Linux
+          asset_content_type: application/octet-stream
+
+      - name: Upload Darwin binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: DiscordChatter-macOS
+          asset_name: DiscordChatter-macOS
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: DiscordChatter-Windows.exe
+          asset_name: DiscordChatter-Windows.exe
+          asset_content_type: application/octet-stream
